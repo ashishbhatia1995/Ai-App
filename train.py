@@ -19,3 +19,35 @@ from transformers import AutoModelForCausalLM, AutoModelForSequenceClassificatio
 model = AutoModelForCausalLM.from_pretrained('gpt2')
 # or for classification:
 # model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=NUM_INTENTS)
+
+from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
+
+args = TrainingArguments(
+    output_dir='out/',
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=4,
+    num_train_epochs=3,
+    logging_steps=50,
+    evaluation_strategy='epoch',
+    save_total_limit=2,
+    fp16=True  # if your GPU supports it
+)
+
+# For language modeling (chat):
+data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
+
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=dataset['train'],
+    eval_dataset=dataset['valid'],
+    data_collator=data_collator
+)
+
+trainer.train()
+
+metrics = trainer.evaluate()
+print(metrics)  # accuracy, loss, perplexity…
+
+trainer.save_model('out/my-custom-gpt2')
+tokenizer.save_pretrained('out/my-custom-gpt2')
